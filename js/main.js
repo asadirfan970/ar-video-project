@@ -1,21 +1,20 @@
 // AR Video Player - Enhanced Version
 class ARVideoPlayer {
   constructor() {
-    this.video = null;
     this.scene = null;
     this.isARReady = false;
-    this.isVideoMuted = true;
     this.targetFound = false;
     
-    // Frame-by-frame video system
-    this.canvas = null;
-    this.ctx = null;
+    // Image sequence system
     this.frameImage = null;
     this.videoPlane = null;
     this.isPlaying = false;
-    this.currentFrame = 0;
+    this.currentFrame = 1; // Start from Image00001.png
+    this.totalFrames = 180; // Image00001.png to Image00180.png
     this.fps = 24;
     this.frameInterval = null;
+    this.imageCache = []; // Preloaded images
+    this.imagesLoaded = false;
     
     // UI Elements
     this.loadingScreen = document.getElementById('loadingScreen');
@@ -59,8 +58,8 @@ class ARVideoPlayer {
 
     // Handle page visibility changes
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden && this.video && !this.video.paused) {
-        this.video.pause();
+      if (document.hidden && this.isPlaying) {
+        this.stopFramePlayback();
       }
     });
 
@@ -168,9 +167,6 @@ class ARVideoPlayer {
 
   initializeARScene() {
     this.scene = document.getElementById('arScene');
-    this.video = document.getElementById('arVideo');
-    this.canvas = document.getElementById('videoCanvas');
-    this.ctx = this.canvas.getContext('2d');
     this.frameImage = document.getElementById('frameImage');
     this.videoPlane = document.getElementById('videoPlane');
     
@@ -284,57 +280,97 @@ class ARVideoPlayer {
   }
 
   setupFrameSystem() {
-    // Load video for frame extraction
-    this.video.load();
-    
-    this.video.addEventListener('loadeddata', () => {
-      console.log('Video loaded for frame extraction');
-      this.video.currentTime = 0;
-    });
-    
-    this.video.addEventListener('canplay', () => {
-      console.log('Video ready for frame extraction');
-    });
+    // Preload all images for smooth playback
+    this.preloadImages();
   }
 
-  extractFrame() {
-    if (this.video && this.canvas && this.ctx) {
-      // Draw current video frame to canvas
-      this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+  preloadImages() {
+    console.log('Preloading image sequence...');
+    let loadedCount = 0;
+    const totalFrames = this.totalFrames;
+    
+    // Preload all images
+    for (let i = 1; i <= totalFrames; i++) {
+      const frameNumber = String(i).padStart(5, '0');
+      const imagePath = `assets/Image${frameNumber}.png`;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
       
-      // Convert canvas to data URL and update frame image
-      const frameDataURL = this.canvas.toDataURL('image/jpeg', 0.8);
-      this.frameImage.src = frameDataURL;
+      img.onload = () => {
+        loadedCount++;
+        this.imageCache[i - 1] = img; // Store in array (index 0-179)
+        
+        if (loadedCount === totalFrames) {
+          this.imagesLoaded = true;
+          console.log('All images preloaded successfully!');
+          this.showStatus('Images ready!', 1000);
+        }
+      };
+      
+      img.onerror = () => {
+        console.error(`Failed to load image: ${imagePath}`);
+        loadedCount++;
+        // Create a placeholder image if loading fails
+        this.imageCache[i - 1] = null;
+        
+        if (loadedCount === totalFrames) {
+          this.imagesLoaded = true;
+          console.log('Image preloading completed (some may have failed)');
+        }
+      };
+      
+      img.src = imagePath;
+    }
+  }
+
+  displayFrame() {
+    if (!this.imagesLoaded || !this.frameImage || !this.videoPlane) {
+      return;
+    }
+    
+    // Get the current frame image from cache
+    const frameIndex = this.currentFrame - 1; // Convert to 0-based index
+    const img = this.imageCache[frameIndex];
+    
+    if (img) {
+      // Update the frame image source
+      this.frameImage.src = img.src;
       
       // Update A-Frame plane texture
-      if (this.videoPlane) {
-        this.videoPlane.setAttribute('src', '#frameImage');
-      }
+      this.videoPlane.setAttribute('src', '#frameImage');
     }
   }
 
   startFramePlayback() {
     if (this.isPlaying) return;
     
+    if (!this.imagesLoaded) {
+      this.showStatus('Loading images... Please wait', 2000);
+      return;
+    }
+    
     this.isPlaying = true;
     const frameTime = 1000 / this.fps; // 24fps = ~42ms per frame
     
     this.frameInterval = setInterval(() => {
-      if (this.targetFound && this.video) {
-        // Advance video time
-        this.video.currentTime += (1 / this.fps);
+      if (this.targetFound) {
+        // Display current frame
+        this.displayFrame();
         
-        // Loop video
-        if (this.video.currentTime >= this.video.duration) {
-          this.video.currentTime = 0;
+        // Advance to next frame
+        this.currentFrame++;
+        
+        // Loop back to first frame
+        if (this.currentFrame > this.totalFrames) {
+          this.currentFrame = 1;
         }
-        
-        // Extract and display frame
-        this.extractFrame();
       }
     }, frameTime);
     
-    console.log('Frame-by-frame playback started at 24fps');
+    // Display first frame immediately
+    this.displayFrame();
+    
+    console.log('Image sequence playback started at 24fps');
   }
 
   stopFramePlayback() {
@@ -343,7 +379,7 @@ class ARVideoPlayer {
       clearInterval(this.frameInterval);
       this.frameInterval = null;
     }
-    console.log('Frame-by-frame playback stopped');
+    console.log('Image sequence playback stopped');
   }
 
   setupAREventListeners() {
@@ -382,16 +418,6 @@ class ARVideoPlayer {
       this.onTargetLost();
     });
 
-    // Video events
-    this.video.addEventListener('loadeddata', () => {
-      console.log('Video loaded successfully');
-    });
-
-    this.video.addEventListener('error', (e) => {
-      console.error('Video error:', e);
-      this.showStatus('Video loading failed', 3000);
-    });
-
     // Setup video controls
     this.setupVideoControls();
   }
@@ -399,50 +425,42 @@ class ARVideoPlayer {
   onTargetFound() {
     this.targetFound = true;
     console.log('Target found!');
-    this.showStatus('🎯 Target found! Starting video...', 1000);
     
-    // Start frame-by-frame playback
-    this.startFramePlayback();
-    
-    // Show video controls quickly
-    setTimeout(() => {
-      this.showVideoControls();
-      this.showStatus('Video playing at 24fps! Tap controls to interact', 2000);
-    }, 500);
+    if (!this.imagesLoaded) {
+      this.showStatus('🎯 Target found! Loading images...', 2000);
+      // Wait for images to load
+      const checkImages = setInterval(() => {
+        if (this.imagesLoaded) {
+          clearInterval(checkImages);
+          this.startFramePlayback();
+          setTimeout(() => {
+            this.showVideoControls();
+            this.showStatus('Image sequence playing at 24fps! Tap controls to interact', 2000);
+          }, 500);
+        }
+      }, 100);
+    } else {
+      this.showStatus('🎯 Target found! Starting image sequence...', 1000);
+      // Start frame-by-frame playback
+      this.startFramePlayback();
+      
+      // Show video controls quickly
+      setTimeout(() => {
+        this.showVideoControls();
+        this.showStatus('Image sequence playing at 24fps! Tap controls to interact', 2000);
+      }, 500);
+    }
   }
 
   onTargetLost() {
     this.targetFound = false;
     this.stopFramePlayback();
     this.hideVideoControls();
+    // Reset to first frame when target is lost
+    this.currentFrame = 1;
     this.showStatus('Target lost. Point camera at the image again.', 2000);
   }
 
-  async playVideo() {
-    try {
-      // Ensure video is ready and buffered
-      if (this.video.readyState >= 3) {
-        // Video is fully loaded, play immediately
-        this.video.currentTime = 0;
-        await this.video.play();
-        console.log('Video playing from buffer');
-      } else {
-        // Wait for video to buffer then play
-        this.video.addEventListener('canplaythrough', async () => {
-          this.video.currentTime = 0;
-          await this.video.play();
-          console.log('Video playing after buffering');
-        }, { once: true });
-      }
-    } catch (error) {
-      console.error('Video play error:', error);
-      // If autoplay fails, show play button
-      if (error.name === 'NotAllowedError') {
-        this.showStatus('Tap the play button to start video', 4000);
-        this.showVideoControls();
-      }
-    }
-  }
 
   setupVideoControls() {
     const playButton = document.getElementById('playButton');
@@ -453,7 +471,7 @@ class ARVideoPlayer {
     playButton.addEventListener('click', () => {
       if (this.targetFound && !this.isPlaying) {
         this.startFramePlayback();
-        this.showStatus('Playing video at 24fps', 1000);
+        this.showStatus('Playing image sequence at 24fps', 1000);
       }
     });
 
@@ -461,31 +479,16 @@ class ARVideoPlayer {
     pauseButton.addEventListener('click', () => {
       if (this.isPlaying) {
         this.stopFramePlayback();
-        this.showStatus('Video paused', 1000);
+        this.showStatus('Image sequence paused', 1000);
       }
     });
 
-    // Volume button (not applicable for frame system, but keep for UI)
+    // Volume button (not applicable for image sequence, but keep for UI)
     volumeButton.addEventListener('click', () => {
-      this.showStatus('Frame-by-frame mode - no audio', 1000);
+      this.showStatus('Image sequence mode - no audio', 1000);
     });
   }
 
-  toggleMute() {
-    this.isVideoMuted = !this.isVideoMuted;
-    this.video.muted = this.isVideoMuted;
-    
-    const volumeButton = document.getElementById('volumeButton');
-    const volumeText = volumeButton.querySelector('a-text');
-    
-    if (this.isVideoMuted) {
-      volumeText.setAttribute('value', '🔇');
-      this.showStatus('Video muted', 1000);
-    } else {
-      volumeText.setAttribute('value', '🔊');
-      this.showStatus('Video unmuted', 1000);
-    }
-  }
 
   showVideoControls() {
     const videoControls = document.getElementById('videoControls');
