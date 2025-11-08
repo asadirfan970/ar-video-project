@@ -70,11 +70,12 @@
 
   <!-- AR Scene -->
   <a-scene id="arScene" 
-           mindar-image="imageTargetSrc: assets/marker.mind; showStats: false; uiScanning: #scanning; uiLoading: #loading;"
+           mindar-image="imageTargetSrc: assets/marker.mind; maxTrack: 1; showStats: false; uiScanning: #scanning; uiLoading: #loading; filterMinCF: 0.0001; filterBeta: 0.001;"
            embedded
            color-space="sRGB"
            vr-mode-ui="enabled: false"
            device-orientation-permission-ui="enabled: false"
+           renderer="colorManagement: true; physicallyCorrectLights: true; antialias: false;"
            style="display: none;">
 
     <a-assets>

@@ -166,19 +166,46 @@ class ARVideoPlayer {
     // Setup AR event listeners
     this.setupAREventListeners();
     
-    this.showStatus('Point camera at the target image');
+    this.showStatus('Initializing AR camera...');
+    
+    // Timeout for AR initialization
+    setTimeout(() => {
+      if (!this.isARReady) {
+        console.warn('AR taking longer than expected');
+        this.showStatus('AR loading... Please wait or refresh if stuck', 3000);
+      }
+    }, 10000);
+    
+    // Force hide loading after reasonable time
+    setTimeout(() => {
+      const loading = document.getElementById('loading');
+      if (loading) loading.style.display = 'none';
+      if (!this.isARReady) {
+        this.showStatus('Point camera at your image to start AR', 5000);
+      }
+    }, 15000);
   }
 
   setupAREventListeners() {
     // AR target events
     this.scene.addEventListener('arReady', () => {
       this.isARReady = true;
-      this.showStatus('AR Ready! Scan the target image', 2000);
+      console.log('AR Ready!');
+      this.showStatus('AR Ready! Point camera at image', 1500);
+      
+      // Hide loading indicators
+      document.getElementById('loading').style.display = 'none';
     });
 
     this.scene.addEventListener('arError', (event) => {
       console.error('AR Error:', event.detail);
-      this.showError('AR initialization failed. Please refresh and try again.');
+      this.showError('AR failed to load. Check your internet connection and try again.');
+    });
+
+    // MindAR specific events
+    this.scene.addEventListener('renderstart', () => {
+      console.log('AR rendering started');
+      this.showStatus('Camera active - scan your image!', 2000);
     });
 
     // Target tracking events
@@ -206,15 +233,17 @@ class ARVideoPlayer {
 
   onTargetFound() {
     this.targetFound = true;
-    this.showStatus('Target detected! Playing video...', 2000);
+    console.log('Target found!');
+    this.showStatus('🎯 Target found! Loading video...', 1000);
     
-    // Play video with user interaction handling
+    // Immediate video play attempt
     this.playVideo();
     
-    // Show video controls after a delay
+    // Show video controls quickly
     setTimeout(() => {
       this.showVideoControls();
-    }, 1000);
+      this.showStatus('Video playing! Tap controls to interact', 2000);
+    }, 500);
   }
 
   onTargetLost() {
