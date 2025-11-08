@@ -160,20 +160,33 @@ class ARVideoPlayer {
     this.scene = document.getElementById('arScene');
     this.video = document.getElementById('arVideo');
     
-    // Add AR active class to body to hide gradient
+    // Add AR active class to html and body for full screen
+    document.documentElement.classList.add('ar-active');
     document.body.classList.add('ar-active');
+    
+    // Force full viewport
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.margin = '0';
+    document.documentElement.style.padding = '0';
+    document.documentElement.style.overflow = 'hidden';
     
     // Preload and buffer video for faster playback
     this.preloadVideo();
     
-    // Show AR scene with full screen
+    // Show AR scene with aggressive full screen
     this.scene.style.display = 'block';
     this.scene.style.position = 'fixed';
     this.scene.style.top = '0';
     this.scene.style.left = '0';
-    this.scene.style.width = '100%';
-    this.scene.style.height = '100%';
-    this.scene.style.zIndex = '1';
+    this.scene.style.right = '0';
+    this.scene.style.bottom = '0';
+    this.scene.style.width = '100vw';
+    this.scene.style.height = '100vh';
+    this.scene.style.zIndex = '999';
+    this.scene.style.margin = '0';
+    this.scene.style.padding = '0';
     
     // Setup AR event listeners
     this.setupAREventListeners();
@@ -195,6 +208,32 @@ class ARVideoPlayer {
         this.showStatus('🎯 Point camera at your image', 0);
       }
     }, 8000);
+  }
+
+  forceFullScreen() {
+    // Force all canvas elements to full screen
+    const canvases = this.scene.querySelectorAll('canvas');
+    canvases.forEach(canvas => {
+      canvas.style.position = 'fixed';
+      canvas.style.top = '0';
+      canvas.style.left = '0';
+      canvas.style.right = '0';
+      canvas.style.bottom = '0';
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+      canvas.style.zIndex = '1';
+      canvas.style.objectFit = 'cover';
+    });
+    
+    // Also force the scene container
+    if (this.scene) {
+      this.scene.style.width = '100vw';
+      this.scene.style.height = '100vh';
+      this.scene.style.position = 'fixed';
+      this.scene.style.top = '0';
+      this.scene.style.left = '0';
+      this.scene.style.zIndex = '999';
+    }
   }
 
   preloadVideo() {
@@ -227,21 +266,28 @@ class ARVideoPlayer {
     this.scene.addEventListener('arReady', () => {
       this.isARReady = true;
       console.log('AR Ready!');
-      this.showStatus('AR Ready! Point camera at image', 1500);
+      this.showStatus('🎯 Scan your image now!', 2000);
       
       // Hide loading indicators
-      document.getElementById('loading').style.display = 'none';
+      const loading = document.getElementById('loading');
+      if (loading) loading.style.display = 'none';
+      
+      // Force canvas to full screen after AR is ready
+      setTimeout(() => {
+        this.forceFullScreen();
+      }, 500);
     });
 
     this.scene.addEventListener('arError', (event) => {
       console.error('AR Error:', event.detail);
-      this.showError('AR failed to load. Check your internet connection and try again.');
+      this.showError('AR failed to load. Please refresh and try again.');
     });
 
     // MindAR specific events
     this.scene.addEventListener('renderstart', () => {
       console.log('AR rendering started');
-      this.showStatus('Camera active - scan your image!', 2000);
+      this.showStatus('📷 Camera active - point at image!', 1500);
+      this.forceFullScreen();
     });
 
     // Target tracking events

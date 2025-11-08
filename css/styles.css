@@ -245,33 +245,65 @@ body.ar-active .instructions-overlay {
   transform: translateY(0);
 }
 
-/* AR Scene Styles */
+/* AR Scene Styles - Force Full Screen */
 a-scene {
-  width: 100% !important;
+  width: 100vw !important;
   height: 100vh !important;
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 999 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Force camera canvas to fill entire viewport */
+a-scene canvas,
+a-scene .a-canvas {
+  width: 100vw !important;
+  height: 100vh !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  object-fit: cover !important;
   z-index: 1 !important;
 }
 
-/* Force full screen camera */
-a-scene canvas {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-}
-
-/* Hide A-Frame UI elements that cause visual issues */
+/* Hide all A-Frame UI elements */
 .a-enter-vr,
-.a-orientation-modal {
+.a-orientation-modal,
+.a-dialog,
+.a-loader-title {
   display: none !important;
+  visibility: hidden !important;
 }
 
 /* Ensure video element covers full area */
 a-scene video {
   width: 100% !important;
   height: 100% !important;
+}
+
+/* Force body and html to full height when AR active */
+html.ar-active,
+body.ar-active {
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #000 !important;
+}
+
+/* Hide everything else when AR is active */
+body.ar-active > *:not(a-scene):not(#statusMessage):not(#errorMessage) {
+  display: none !important;
 }
 
 /* Status Messages */
