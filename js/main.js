@@ -295,10 +295,10 @@ class ARVideoPlayer {
   }
 
   setupAREventListeners() {
-    // AR target events
+    // MindAR documented events
     this.scene.addEventListener('arReady', () => {
       this.isARReady = true;
-      console.log('AR Ready!');
+      console.log('MindAR Ready!');
       this.showStatus('🎯 Scan your image now!', 2000);
       
       // Hide loading indicators
@@ -309,23 +309,16 @@ class ARVideoPlayer {
       setTimeout(() => {
         this.forceFullScreen();
       }, 500);
-    });
-
-    this.scene.addEventListener('arError', (event) => {
-      console.error('AR Error:', event.detail);
-      this.showError('AR failed to load. Please refresh and try again.');
-    });
-
-    // MindAR specific events
-    this.scene.addEventListener('renderstart', () => {
-      console.log('AR rendering started');
-      this.showStatus('📷 Camera active - point at image!', 1500);
-      this.forceFullScreen();
       
-      // Continuously remove debug overlays during AR operation
+      // Start continuous cleanup of any debug overlays
       this.debugCleanupInterval = setInterval(() => {
         this.removeDebugOverlays();
       }, 1000);
+    });
+
+    this.scene.addEventListener('arError', (event) => {
+      console.error('MindAR Error:', event.detail);
+      this.showError('AR failed to load. Please refresh and try again.');
     });
 
     // Target tracking events

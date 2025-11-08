@@ -70,17 +70,12 @@
 
   <!-- AR Scene -->
   <a-scene id="arScene" 
-           mindar-image="imageTargetSrc: assets/marker.mind; maxTrack: 1; showStats: false; uiScanning: false; uiLoading: false; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 3; missTolerance: 3; showFeatures: false;"
-           embedded="false"
+           mindar-image="imageTargetSrc: assets/marker.mind; maxTrack: 1; uiError: no; uiLoading: no; uiScanning: no; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 3; missTolerance: 3;"
            color-space="sRGB"
+           renderer="colorManagement: true; physicallyCorrectLights: true;"
            vr-mode-ui="enabled: false"
            device-orientation-permission-ui="enabled: false"
-           renderer="colorManagement: true; antialias: false; alpha: false; precision: highp; logarithmicDepthBuffer: false;"
-           camera="active: true; fov: 80;"
-           background="color: #000000"
-           inspector="url: false"
-           debug="false"
-           stats="false"
+           embedded="false"
            style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 999; margin: 0; padding: 0;">
 
     <a-assets>
@@ -98,7 +93,7 @@
              data-fps="24"></video>
     </a-assets>
 
-    <a-camera position="0 0 0" look-controls="enabled: false" cursor="rayOrigin: mouse"></a-camera>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
     <a-entity mindar-image-target="targetIndex: 0">
       <a-video id="videoEntity"
