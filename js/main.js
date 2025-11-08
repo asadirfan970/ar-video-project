@@ -174,6 +174,14 @@ class ARVideoPlayer {
     // Set initial texture to first image to avoid black screen
     if (this.frameImage) {
       this.frameImage.src = 'assets/Image00001.png';
+      // Wait for initial image to load
+      this.frameImage.onload = () => {
+        console.log('Initial frame image loaded');
+        // Update plane material
+        if (this.videoPlane) {
+          this.videoPlane.setAttribute('material', 'src', this.frameImage);
+        }
+      };
     }
     
     // Add AR active class to html and body for full screen
@@ -293,79 +301,149 @@ class ARVideoPlayer {
   preloadImages() {
     console.log('Preloading image sequence...');
     let loadedCount = 0;
+    let textureCreatedCount = 0;
     const totalFrames = this.totalFrames;
     
-    // Preload all images
-    for (let i = 1; i <= totalFrames; i++) {
-      const frameNumber = String(i).padStart(5, '0');
-      const imagePath = `assets/Image${frameNumber}.png`;
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
+    // Wait for A-Frame to be ready
+    const waitForAFrame = () => {
+      if (typeof AFRAME !== 'undefined' && AFRAME.THREE) {
+        console.log('A-Frame ready, starting image preload');
+        startPreloading();
+      } else {
+        console.log('Waiting for A-Frame...');
+        setTimeout(waitForAFrame, 100);
+      }
+    };
+    
+    const startPreloading = () => {
+      const THREE = AFRAME.THREE;
+      console.log('Starting to preload', totalFrames, 'images');
       
-      img.onload = () => {
-        loadedCount++;
-        this.imageCache[i - 1] = img; // Store in array (index 0-179)
+      // Preload all images
+      for (let i = 1; i <= totalFrames; i++) {
+        const frameNumber = String(i).padStart(5, '0');
+        const imagePath = `assets/Image${frameNumber}.png`;
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
         
-        // Create Three.js texture from the loaded image
-        try {
-          const THREE = AFRAME.THREE;
-          const texture = new THREE.Texture(img);
-          texture.flipY = false; // Important for correct orientation
-          texture.needsUpdate = true;
-          this.textureCache[i - 1] = texture;
-        } catch (error) {
-          console.error(`Error creating texture for frame ${i}:`, error);
-        }
+        img.onload = () => {
+          loadedCount++;
+          this.imageCache[i - 1] = img; // Store in array (index 0-179)
+          
+          // Create Three.js texture from the loaded image
+          try {
+            const texture = new THREE.Texture(img);
+            texture.flipY = false; // Important for correct orientation
+            texture.needsUpdate = true;
+            this.textureCache[i - 1] = texture;
+            textureCreatedCount++;
+            
+            if (i === 1) {
+              console.log('✓ First image loaded successfully:', imagePath, 'Size:', img.width, 'x', img.height);
+            }
+            
+            // Log progress every 30 frames
+            if (i % 30 === 0) {
+              console.log(`Progress: ${i}/${totalFrames} images loaded (${Math.round(i/totalFrames*100)}%)`);
+            }
+          } catch (error) {
+            console.error(`Error creating texture for frame ${i}:`, error);
+          }
+          
+          if (loadedCount === totalFrames) {
+            this.imagesLoaded = true;
+            console.log(`✓ All ${totalFrames} images loaded!`);
+            console.log(`✓ Textures created: ${textureCreatedCount}/${totalFrames}`);
+            this.showStatus('Images ready!', 1000);
+          }
+        };
         
-        if (loadedCount === totalFrames) {
-          this.imagesLoaded = true;
-          console.log('All images and textures preloaded successfully!');
-          this.showStatus('Images ready!', 1000);
-        }
-      };
-      
-      img.onerror = () => {
-        console.error(`Failed to load image: ${imagePath}`);
-        loadedCount++;
-        // Create a placeholder image if loading fails
-        this.imageCache[i - 1] = null;
+        img.onerror = (error) => {
+          console.error(`✗ Failed to load image: ${imagePath}`, error);
+          loadedCount++;
+          // Create a placeholder image if loading fails
+          this.imageCache[i - 1] = null;
+          this.textureCache[i - 1] = null;
+          
+          if (loadedCount === totalFrames) {
+            this.imagesLoaded = true;
+            console.log('Image preloading completed (some may have failed)');
+            console.log(`Successfully loaded: ${textureCreatedCount}/${totalFrames} images`);
+            if (textureCreatedCount === 0) {
+              console.error('CRITICAL: No images loaded successfully!');
+              this.showError('Failed to load images. Please check the console for details.');
+            }
+          }
+        };
         
-        if (loadedCount === totalFrames) {
-          this.imagesLoaded = true;
-          console.log('Image preloading completed (some may have failed)');
-        }
-      };
-      
-      img.src = imagePath;
-    }
+        img.src = imagePath;
+      }
+    };
+    
+    waitForAFrame();
   }
 
   displayFrame() {
     if (!this.imagesLoaded || !this.videoPlane) {
+      console.log('displayFrame: imagesLoaded=', this.imagesLoaded, 'videoPlane=', !!this.videoPlane);
       return;
     }
     
-    // Get the current frame texture from cache
+    // Get the current frame
     const frameIndex = this.currentFrame - 1; // Convert to 0-based index
+    const img = this.imageCache[frameIndex];
     const texture = this.textureCache[frameIndex];
     
-    if (texture) {
-      try {
-        // Get the Three.js mesh and material
-        const mesh = this.videoPlane.getObject3D('mesh');
-        if (mesh && mesh.material) {
-          // Update the material with the cached texture
-          mesh.material.map = texture;
-          mesh.material.needsUpdate = true;
+    if (!img || !texture) {
+      console.warn(`Image or texture not found for frame ${this.currentFrame} (index ${frameIndex})`);
+      return;
+    }
+    
+    try {
+      const frameNumber = String(this.currentFrame).padStart(5, '0');
+      const imagePath = `assets/Image${frameNumber}.png`;
+      
+      // Method 1: Update via A-Frame material component (preferred)
+      if (this.frameImage) {
+        // Update the image source
+        this.frameImage.src = imagePath;
+        
+        // Wait for image to load in the DOM element
+        const updateViaAFrame = () => {
+          if (this.videoPlane) {
+            // Update material using A-Frame's setAttribute
+            this.videoPlane.setAttribute('material', 'src', this.frameImage);
+            console.log(`Frame ${this.currentFrame} updated via A-Frame`);
+          }
+        };
+        
+        if (this.frameImage.complete && this.frameImage.naturalWidth > 0) {
+          updateViaAFrame();
         } else {
-          // Mesh might not be ready yet, try again next frame
-          console.warn('Mesh not ready yet, will retry');
+          this.frameImage.onload = updateViaAFrame;
         }
-      } catch (error) {
-        console.error('Error updating texture:', error);
       }
-    } else {
-      console.warn(`Texture not found for frame ${this.currentFrame}`);
+      
+      // Method 2: Direct Three.js texture update (backup)
+      setTimeout(() => {
+        try {
+          const mesh = this.videoPlane.getObject3D('mesh');
+          if (mesh && mesh.material && texture && texture.image) {
+            // Ensure texture is ready
+            if (texture.image.complete) {
+              mesh.material.map = texture;
+              mesh.material.map.needsUpdate = true;
+              mesh.material.needsUpdate = true;
+              console.log(`Frame ${this.currentFrame} updated via Three.js`);
+            }
+          }
+        } catch (error) {
+          console.error('Error in Three.js update:', error);
+        }
+      }, 50);
+      
+    } catch (error) {
+      console.error('Error updating texture:', error);
     }
   }
 
@@ -453,38 +531,58 @@ class ARVideoPlayer {
   onTargetFound() {
     this.targetFound = true;
     console.log('Target found!');
+    console.log('Images loaded:', this.imagesLoaded);
+    console.log('Video plane:', !!this.videoPlane);
     
-    // Ensure mesh is ready
-    setTimeout(() => {
-      if (!this.imagesLoaded) {
-        this.showStatus('🎯 Target found! Loading images...', 2000);
-        // Wait for images to load
-        const checkImages = setInterval(() => {
-          if (this.imagesLoaded) {
-            clearInterval(checkImages);
-            // Display first frame immediately
-            this.displayFrame();
+    // Function to start playback
+    const startPlayback = () => {
+      // Wait a bit more to ensure mesh is fully ready
+      setTimeout(() => {
+        // Reset to first frame
+        this.currentFrame = 1;
+        
+        // Try to display first frame multiple times to ensure it works
+        let attempts = 0;
+        const tryDisplayFrame = () => {
+          attempts++;
+          this.displayFrame();
+          
+          // Check if frame was displayed successfully
+          const mesh = this.videoPlane ? this.videoPlane.getObject3D('mesh') : null;
+          if (mesh && mesh.material && mesh.material.map) {
+            console.log('First frame displayed successfully!');
             this.startFramePlayback();
             setTimeout(() => {
               this.showVideoControls();
-              this.showStatus('Image sequence playing at 24fps! Tap controls to interact', 2000);
+              this.showStatus('Image sequence playing at 24fps!', 2000);
             }, 500);
+          } else if (attempts < 10) {
+            // Retry if mesh not ready
+            setTimeout(tryDisplayFrame, 100);
+          } else {
+            console.error('Failed to display frame after multiple attempts');
+            this.showStatus('Error displaying images. Please refresh.', 3000);
           }
-        }, 100);
-      } else {
-        this.showStatus('🎯 Target found! Starting image sequence...', 1000);
-        // Display first frame immediately
-        this.displayFrame();
-        // Start frame-by-frame playback
-        this.startFramePlayback();
+        };
         
-        // Show video controls quickly
-        setTimeout(() => {
-          this.showVideoControls();
-          this.showStatus('Image sequence playing at 24fps! Tap controls to interact', 2000);
-        }, 500);
-      }
-    }, 100); // Small delay to ensure mesh is ready
+        tryDisplayFrame();
+      }, 300); // Longer delay to ensure everything is ready
+    };
+    
+    if (!this.imagesLoaded) {
+      this.showStatus('🎯 Target found! Loading images...', 2000);
+      // Wait for images to load
+      const checkImages = setInterval(() => {
+        if (this.imagesLoaded) {
+          clearInterval(checkImages);
+          console.log('All images loaded, starting playback');
+          startPlayback();
+        }
+      }, 100);
+    } else {
+      this.showStatus('🎯 Target found! Starting image sequence...', 1000);
+      startPlayback();
+    }
   }
 
   onTargetLost() {
