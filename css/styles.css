@@ -275,11 +275,34 @@ a-scene .a-canvas {
   z-index: 1 !important;
 }
 
-/* Hide all A-Frame UI elements */
+/* Hide all A-Frame UI elements and debug overlays */
 .a-enter-vr,
 .a-orientation-modal,
 .a-dialog,
-.a-loader-title {
+.a-loader-title,
+.a-inspector-panel,
+.a-stats,
+canvas[data-engine="three.js r152"] + canvas,
+canvas + canvas {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Hide MindAR debug visualizations */
+canvas[style*="pointer-events: none"],
+canvas[style*="position: absolute"] {
+  display: none !important;
+}
+
+/* Force hide any debug canvas overlays */
+a-scene canvas:not(:first-child) {
+  display: none !important;
+}
+
+/* Hide any feature point visualizations */
+.mindar-ui-overlay,
+.mindar-ui-scanning,
+.mindar-ui-loading {
   display: none !important;
   visibility: hidden !important;
 }

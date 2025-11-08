@@ -211,19 +211,29 @@ class ARVideoPlayer {
   }
 
   forceFullScreen() {
-    // Force all canvas elements to full screen
+    // Remove any debug overlays first
+    this.removeDebugOverlays();
+    
+    // Force main canvas to full screen (only the first canvas - the camera)
     const canvases = this.scene.querySelectorAll('canvas');
-    canvases.forEach(canvas => {
-      canvas.style.position = 'fixed';
-      canvas.style.top = '0';
-      canvas.style.left = '0';
-      canvas.style.right = '0';
-      canvas.style.bottom = '0';
-      canvas.style.width = '100vw';
-      canvas.style.height = '100vh';
-      canvas.style.zIndex = '1';
-      canvas.style.objectFit = 'cover';
-    });
+    if (canvases.length > 0) {
+      const mainCanvas = canvases[0]; // Only style the main camera canvas
+      mainCanvas.style.position = 'fixed';
+      mainCanvas.style.top = '0';
+      mainCanvas.style.left = '0';
+      mainCanvas.style.right = '0';
+      mainCanvas.style.bottom = '0';
+      mainCanvas.style.width = '100vw';
+      mainCanvas.style.height = '100vh';
+      mainCanvas.style.zIndex = '1';
+      mainCanvas.style.objectFit = 'cover';
+      
+      // Hide all other canvases (debug overlays)
+      for (let i = 1; i < canvases.length; i++) {
+        canvases[i].style.display = 'none';
+        canvases[i].style.visibility = 'hidden';
+      }
+    }
     
     // Also force the scene container
     if (this.scene) {
@@ -234,6 +244,29 @@ class ARVideoPlayer {
       this.scene.style.left = '0';
       this.scene.style.zIndex = '999';
     }
+  }
+
+  removeDebugOverlays() {
+    // Remove MindAR debug overlays
+    const debugElements = document.querySelectorAll('.mindar-ui-overlay, .mindar-ui-scanning, .mindar-ui-loading');
+    debugElements.forEach(el => el.remove());
+    
+    // Hide any additional canvas elements (debug visualizations)
+    const allCanvases = document.querySelectorAll('canvas');
+    allCanvases.forEach((canvas, index) => {
+      if (index > 0) { // Keep only the first canvas (camera)
+        canvas.style.display = 'none';
+        canvas.style.visibility = 'hidden';
+      }
+    });
+    
+    // Remove any debug divs that might be created by MindAR
+    const debugDivs = document.querySelectorAll('div[style*="pointer-events: none"]');
+    debugDivs.forEach(div => {
+      if (div.querySelector('canvas')) {
+        div.style.display = 'none';
+      }
+    });
   }
 
   preloadVideo() {
@@ -288,6 +321,11 @@ class ARVideoPlayer {
       console.log('AR rendering started');
       this.showStatus('📷 Camera active - point at image!', 1500);
       this.forceFullScreen();
+      
+      // Continuously remove debug overlays during AR operation
+      this.debugCleanupInterval = setInterval(() => {
+        this.removeDebugOverlays();
+      }, 1000);
     });
 
     // Target tracking events
