@@ -7,6 +7,16 @@ class ARVideoPlayer {
     this.isVideoMuted = true;
     this.targetFound = false;
     
+    // Frame-by-frame video system
+    this.canvas = null;
+    this.ctx = null;
+    this.frameImage = null;
+    this.videoPlane = null;
+    this.isPlaying = false;
+    this.currentFrame = 0;
+    this.fps = 24;
+    this.frameInterval = null;
+    
     // UI Elements
     this.loadingScreen = document.getElementById('loadingScreen');
     this.instructionsOverlay = document.getElementById('instructionsOverlay');
@@ -159,6 +169,10 @@ class ARVideoPlayer {
   initializeARScene() {
     this.scene = document.getElementById('arScene');
     this.video = document.getElementById('arVideo');
+    this.canvas = document.getElementById('videoCanvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.frameImage = document.getElementById('frameImage');
+    this.videoPlane = document.getElementById('videoPlane');
     
     // Add AR active class to html and body for full screen
     document.documentElement.classList.add('ar-active');
@@ -172,8 +186,8 @@ class ARVideoPlayer {
     document.documentElement.style.padding = '0';
     document.documentElement.style.overflow = 'hidden';
     
-    // Preload and buffer video for faster playback
-    this.preloadVideo();
+    // Setup frame-by-frame video system
+    this.setupFrameSystem();
     
     // Show AR scene with aggressive full screen
     this.scene.style.display = 'block';
@@ -269,29 +283,67 @@ class ARVideoPlayer {
     });
   }
 
-  preloadVideo() {
-    // Force video to load and buffer
+  setupFrameSystem() {
+    // Load video for frame extraction
     this.video.load();
     
-    // Set up video for optimal playback
-    this.video.addEventListener('loadstart', () => {
-      console.log('Video loading started');
+    this.video.addEventListener('loadeddata', () => {
+      console.log('Video loaded for frame extraction');
+      this.video.currentTime = 0;
     });
     
     this.video.addEventListener('canplay', () => {
-      console.log('Video can start playing');
-      this.video.currentTime = 0; // Reset to beginning
+      console.log('Video ready for frame extraction');
     });
-    
-    this.video.addEventListener('canplaythrough', () => {
-      console.log('Video fully buffered and ready');
-    });
-    
-    // Preload video data
-    if (this.video.readyState < 3) {
-      this.video.preload = 'auto';
-      this.video.load();
+  }
+
+  extractFrame() {
+    if (this.video && this.canvas && this.ctx) {
+      // Draw current video frame to canvas
+      this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+      
+      // Convert canvas to data URL and update frame image
+      const frameDataURL = this.canvas.toDataURL('image/jpeg', 0.8);
+      this.frameImage.src = frameDataURL;
+      
+      // Update A-Frame plane texture
+      if (this.videoPlane) {
+        this.videoPlane.setAttribute('src', '#frameImage');
+      }
     }
+  }
+
+  startFramePlayback() {
+    if (this.isPlaying) return;
+    
+    this.isPlaying = true;
+    const frameTime = 1000 / this.fps; // 24fps = ~42ms per frame
+    
+    this.frameInterval = setInterval(() => {
+      if (this.targetFound && this.video) {
+        // Advance video time
+        this.video.currentTime += (1 / this.fps);
+        
+        // Loop video
+        if (this.video.currentTime >= this.video.duration) {
+          this.video.currentTime = 0;
+        }
+        
+        // Extract and display frame
+        this.extractFrame();
+      }
+    }, frameTime);
+    
+    console.log('Frame-by-frame playback started at 24fps');
+  }
+
+  stopFramePlayback() {
+    this.isPlaying = false;
+    if (this.frameInterval) {
+      clearInterval(this.frameInterval);
+      this.frameInterval = null;
+    }
+    console.log('Frame-by-frame playback stopped');
   }
 
   setupAREventListeners() {
@@ -347,21 +399,21 @@ class ARVideoPlayer {
   onTargetFound() {
     this.targetFound = true;
     console.log('Target found!');
-    this.showStatus('🎯 Target found! Loading video...', 1000);
+    this.showStatus('🎯 Target found! Starting video...', 1000);
     
-    // Immediate video play attempt
-    this.playVideo();
+    // Start frame-by-frame playback
+    this.startFramePlayback();
     
     // Show video controls quickly
     setTimeout(() => {
       this.showVideoControls();
-      this.showStatus('Video playing! Tap controls to interact', 2000);
+      this.showStatus('Video playing at 24fps! Tap controls to interact', 2000);
     }, 500);
   }
 
   onTargetLost() {
     this.targetFound = false;
-    this.video.pause();
+    this.stopFramePlayback();
     this.hideVideoControls();
     this.showStatus('Target lost. Point camera at the image again.', 2000);
   }
@@ -399,21 +451,23 @@ class ARVideoPlayer {
 
     // Play button
     playButton.addEventListener('click', () => {
-      if (this.targetFound) {
-        this.video.play();
-        this.showStatus('Playing video', 1000);
+      if (this.targetFound && !this.isPlaying) {
+        this.startFramePlayback();
+        this.showStatus('Playing video at 24fps', 1000);
       }
     });
 
     // Pause button
     pauseButton.addEventListener('click', () => {
-      this.video.pause();
-      this.showStatus('Video paused', 1000);
+      if (this.isPlaying) {
+        this.stopFramePlayback();
+        this.showStatus('Video paused', 1000);
+      }
     });
 
-    // Volume button
+    // Volume button (not applicable for frame system, but keep for UI)
     volumeButton.addEventListener('click', () => {
-      this.toggleMute();
+      this.showStatus('Frame-by-frame mode - no audio', 1000);
     });
   }
 
