@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MindAR Marker Creator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        code {
+            background: #f1f1f1;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Create AR Marker for Your Project</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Important:</strong> You need to create a marker file from your poster.jpg to enable image tracking.
+        </div>
+
+        <div class="step">
+            <h3>Step 1: Use MindAR Image Target Compiler</h3>
+            <p>Go to the official MindAR compiler to create your marker file:</p>
+            <a href="https://hiukim.github.io/mind-ar-js-doc/tools/compile" target="_blank" class="button">
+                Open MindAR Compiler
+            </a>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Upload Your Image</h3>
+            <p>Upload your <code>poster.jpg</code> file to the compiler. Make sure your image:</p>
+            <ul>
+                <li>Has good contrast and clear features</li>
+                <li>Is not too blurry or dark</li>
+                <li>Contains recognizable patterns or text</li>
+                <li>Is in JPG or PNG format</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Download the .mind file</h3>
+            <p>After compilation, download the generated <code>.mind</code> file and rename it to <code>marker.mind</code></p>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Place in Assets Folder</h3>
+            <p>Move the <code>marker.mind</code> file to your <code>assets/</code> folder, replacing any existing marker file.</p>
+        </div>
+
+        <div class="step">
+            <h3>Alternative: Quick Test Marker</h3>
+            <p>For testing purposes, you can download a pre-made marker file:</p>
+            <a href="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind" 
+               download="marker.mind" class="button">
+                Download Test Marker
+            </a>
+            <p><small>Note: This test marker works with the MindAR example card image, not your poster.jpg</small></p>
+        </div>
+
+        <div class="step">
+            <h3>Step 5: Test Your AR Experience</h3>
+            <p>Once you have the marker file in place:</p>
+            <ol>
+                <li>Open your <code>index.html</code> in a web browser</li>
+                <li>Allow camera permissions</li>
+                <li>Point your camera at the target image</li>
+                <li>Watch the AR video appear!</li>
+            </ol>
+        </div>
+
+        <div class="warning">
+            <strong>💡 Tip:</strong> For best results, print your target image on paper and scan it with your device camera.
+        </div>
+    </div>
+</body>
+</html>

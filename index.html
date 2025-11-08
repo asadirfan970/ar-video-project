@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>AR Video Experience</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="assets/poster.jpg">
+  
+  <!-- A-Frame library -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  
+  <!-- MindAR image-tracking A-Frame integration -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-content">
+      <div class="ar-logo">
+        <i class="fas fa-camera"></i>
+        <span>AR</span>
+      </div>
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Initializing AR Experience...</p>
+      <div class="loading-progress">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions Overlay -->
+  <div id="instructionsOverlay" class="instructions-overlay">
+    <div class="instructions-content">
+      <div class="instruction-header">
+        <i class="fas fa-qrcode"></i>
+        <h2>Scan to Experience AR</h2>
+      </div>
+      <div class="instruction-steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <p>Point your camera at the target image</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <p>Keep the image in frame</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <p>Watch the AR video come to life!</p>
+        </div>
+      </div>
+      <div class="target-preview">
+        <img src="assets/poster.jpg" alt="Target Image" class="target-image">
+        <p class="target-caption">Scan this image</p>
+      </div>
+      <button id="startAR" class="start-button">
+        <i class="fas fa-play"></i>
+        Start AR Experience
+      </button>
+    </div>
+  </div>
+
+  <!-- AR Scene -->
+  <a-scene id="arScene" 
+           mindar-image="imageTargetSrc: assets/marker.mind; showStats: false; uiScanning: #scanning; uiLoading: #loading;"
+           embedded
+           color-space="sRGB"
+           vr-mode-ui="enabled: false"
+           device-orientation-permission-ui="enabled: false"
+           style="display: none;">
+
+    <a-assets>
+      <video id="arVideo" 
+             src="assets/video.mp4" 
+             loop="true" 
+             preload="auto"
+             muted="true"
+             playsinline="true"
+             webkit-playsinline="true"></video>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false" cursor="rayOrigin: mouse"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-video id="videoEntity"
+               src="#arVideo"
+               width="1.6" 
+               height="0.9"
+               position="0 0 0.1"
+               rotation="0 0 0"
+               material="transparent: true; alphaTest: 0.1"
+               animation__scale="property: scale; to: 1.1 1.1 1.1; dur: 500; easing: easeOutQuad; startEvents: targetFound"
+               animation__scaleback="property: scale; to: 1 1 1; dur: 500; easing: easeOutQuad; startEvents: targetLost">
+      </a-video>
+      
+      <!-- Video Controls -->
+      <a-entity id="videoControls" position="0 -0.6 0.1" visible="false">
+        <a-plane id="playButton" 
+                 position="-0.3 0 0" 
+                 width="0.2" 
+                 height="0.2" 
+                 color="#4CAF50" 
+                 material="transparent: true; opacity: 0.8"
+                 geometry="primitive: circle">
+          <a-text value="▶" position="0 0 0.01" align="center" color="white" scale="2 2 2"></a-text>
+        </a-plane>
+        
+        <a-plane id="pauseButton" 
+                 position="0 0 0" 
+                 width="0.2" 
+                 height="0.2" 
+                 color="#FF5722" 
+                 material="transparent: true; opacity: 0.8"
+                 geometry="primitive: circle">
+          <a-text value="⏸" position="0 0 0.01" align="center" color="white" scale="2 2 2"></a-text>
+        </a-plane>
+        
+        <a-plane id="volumeButton" 
+                 position="0.3 0 0" 
+                 width="0.2" 
+                 height="0.2" 
+                 color="#2196F3" 
+                 material="transparent: true; opacity: 0.8"
+                 geometry="primitive: circle">
+          <a-text value="🔊" position="0 0 0.01" align="center" color="white" scale="1.5 1.5 1.5"></a-text>
+        </a-plane>
+      </a-entity>
+    </a-entity>
+
+  </a-scene>
+
+  <!-- Status Messages -->
+  <div id="statusMessage" class="status-message"></div>
+
+  <!-- Scanning Indicator -->
+  <div id="scanning" class="scanning-indicator">
+    <div class="scanning-frame">
+      <div class="corner top-left"></div>
+      <div class="corner top-right"></div>
+      <div class="corner bottom-left"></div>
+      <div class="corner bottom-right"></div>
+    </div>
+    <p class="scanning-text">Scanning for target image...</p>
+  </div>
+
+  <!-- Loading Indicator for MindAR -->
+  <div id="loading" class="ar-loading">
+    <div class="ar-loading-spinner"></div>
+    <p>Loading AR...</p>
+  </div>
+
+  <!-- Error Message -->
+  <div id="errorMessage" class="error-message" style="display: none;">
+    <div class="error-content">
+      <i class="fas fa-exclamation-triangle"></i>
+      <h3>Camera Access Required</h3>
+      <p>Please allow camera access to use the AR experience.</p>
+      <button id="retryButton" class="retry-button">Try Again</button>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
