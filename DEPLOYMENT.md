@@ -17,7 +17,7 @@ You can upload files in two ways:
    - `index.html`
    - `css/styles.css`
    - `js/main.js`
-   - `assets/poster.jpg`
+   - `assets/poster.png`
    - `assets/video.mp4`
    - `assets/marker.mind` (create this first!)
    - `README.md`
@@ -58,7 +58,7 @@ git push -u origin main
 **⚠️ IMPORTANT**: You must create the marker file before your AR will work!
 
 1. Open `create-marker.html` in your browser (from your local files)
-2. Follow the instructions to create `marker.mind` from your `poster.jpg`
+2. Follow the instructions to create `marker.mind` from your `poster.png`
 3. Upload the `marker.mind` file to your `assets/` folder on GitHub
 
 ### Step 5: Access Your AR Experience
@@ -72,7 +72,7 @@ git push -u origin main
 - [ ] `index.html` - Main AR page
 - [ ] `css/styles.css` - Styling
 - [ ] `js/main.js` - AR functionality
-- [ ] `assets/poster.jpg` - Target image
+- [ ] `assets/poster.png` - Target image
 - [ ] `assets/video.mp4` - AR video content
 - [ ] `assets/marker.mind` - **MUST CREATE THIS**
 
@@ -95,7 +95,7 @@ This is the most critical step! Without the marker file, AR tracking won't work.
 
 ### Method 1: MindAR Online Compiler (Recommended)
 1. Visit: https://hiukim.github.io/mind-ar-js-doc/tools/compile
-2. Upload your `poster.jpg`
+2. Upload your `poster.png`
 3. Wait for compilation (may take a few minutes)
 4. Download the `.mind` file
 5. Rename it to `marker.mind`
@@ -105,7 +105,7 @@ This is the most critical step! Without the marker file, AR tracking won't work.
 If you're comfortable with Node.js:
 ```bash
 npm install -g @hiukim/mind-ar-js-cli
-mind-ar-js-cli compile --input-path assets/poster.jpg --output-path assets/marker.mind
+mind-ar-js-cli compile --input-path assets/poster.png --output-path assets/marker.mind
 ```
 
 ## 🌐 Alternative Free Hosting Options

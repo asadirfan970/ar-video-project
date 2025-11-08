@@ -7,7 +7,7 @@ const urlsToCache = [
   '/index.html',
   '/css/styles.css',
   '/js/main.js',
-  '/assets/poster.jpg',
+  '/assets/poster.png',
   // External resources
   'https://aframe.io/releases/1.5.0/aframe.min.js',
   'https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js',

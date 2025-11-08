@@ -43,13 +43,14 @@ A modern, responsive AR video player that uses image tracking to display videos 
 
 3. **Replace the video**
    - Add your video file as `assets/video.mp4`
-   - Update `assets/poster.jpg` with your target image
+   - Update `assets/poster.png` - Target image for AR tracking
 
 4. **Deploy to GitHub Pages**
    - Push to your GitHub repository
    - Enable GitHub Pages in repository settings
    - Your AR experience will be live!
 
+## Project Structure
 ## 📁 Project Structure
 
 ```
@@ -60,7 +61,7 @@ AR-Video-Player/
 ├── js/
 │   └── main.js            # AR functionality and controls
 ├── assets/
-│   ├── poster.jpg         # Target image for scanning
+│   ├── poster.png         # Target image for scanning
 │   ├── video.mp4          # AR video content
 │   └── marker.mind        # Generated marker file
 ├── create-marker.html     # Marker creation guide
@@ -72,7 +73,7 @@ AR-Video-Player/
 The marker file is crucial for image tracking. Here's how to create one:
 
 1. **Visit the MindAR Compiler**: https://hiukim.github.io/mind-ar-js-doc/tools/compile
-2. **Upload your target image** (poster.jpg)
+2. **Upload your target image** (poster.png)
 3. **Download the generated .mind file**
 4. **Rename it to `marker.mind`** and place in `assets/` folder
 
@@ -129,7 +130,7 @@ In `index.html`, adjust A-Frame properties:
 ## ⚡ Performance Tips
 
 1. **Optimize your video**: Use H.264 codec, reasonable file size
-2. **Compress images**: Keep poster.jpg under 2MB
+2. **Compress images**: Keep poster.png under 2MB
 3. **Test on target devices**: Always test on actual mobile devices
 4. **Use HTTPS**: Required for camera access
 
