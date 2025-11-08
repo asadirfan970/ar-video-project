@@ -70,13 +70,14 @@
 
   <!-- AR Scene -->
   <a-scene id="arScene" 
-           mindar-image="imageTargetSrc: assets/marker.mind; maxTrack: 1; showStats: false; uiScanning: #scanning; uiLoading: #loading; filterMinCF: 0.0001; filterBeta: 0.001;"
-           embedded
+           mindar-image="imageTargetSrc: assets/marker.mind; maxTrack: 1; showStats: false; uiScanning: false; uiLoading: false; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5;"
+           embedded="true"
            color-space="sRGB"
            vr-mode-ui="enabled: false"
            device-orientation-permission-ui="enabled: false"
-           renderer="colorManagement: true; physicallyCorrectLights: true; antialias: false;"
-           style="display: none;">
+           renderer="colorManagement: true; antialias: true; alpha: true; precision: highp;"
+           camera="active: true"
+           style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
 
     <a-assets>
       <video id="arVideo" 
@@ -85,7 +86,10 @@
              preload="auto"
              muted="true"
              playsinline="true"
-             webkit-playsinline="true"></video>
+             webkit-playsinline="true"
+             crossorigin="anonymous"
+             buffered="true"
+             controls="false"></video>
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false" cursor="rayOrigin: mouse"></a-camera>
@@ -141,21 +145,17 @@
   <!-- Status Messages -->
   <div id="statusMessage" class="status-message"></div>
 
-  <!-- Scanning Indicator -->
-  <div id="scanning" class="scanning-indicator">
-    <div class="scanning-frame">
-      <div class="corner top-left"></div>
-      <div class="corner top-right"></div>
-      <div class="corner bottom-left"></div>
-      <div class="corner bottom-right"></div>
+  <!-- Clean Scanning Indicator -->
+  <div id="scanning" class="scanning-indicator" style="display: none;">
+    <div class="clean-scanning-message">
+      <p class="scanning-text">🎯 Point camera at your image</p>
     </div>
-    <p class="scanning-text">Scanning for target image...</p>
   </div>
 
-  <!-- Loading Indicator for MindAR -->
-  <div id="loading" class="ar-loading">
-    <div class="ar-loading-spinner"></div>
-    <p>Loading AR...</p>
+  <!-- Clean Loading Indicator -->
+  <div id="loading" class="ar-loading" style="display: none;">
+    <div class="clean-loading-spinner"></div>
+    <p>Initializing AR...</p>
   </div>
 
   <!-- Error Message -->

@@ -160,30 +160,66 @@ class ARVideoPlayer {
     this.scene = document.getElementById('arScene');
     this.video = document.getElementById('arVideo');
     
-    // Show AR scene
+    // Add AR active class to body to hide gradient
+    document.body.classList.add('ar-active');
+    
+    // Preload and buffer video for faster playback
+    this.preloadVideo();
+    
+    // Show AR scene with full screen
     this.scene.style.display = 'block';
+    this.scene.style.position = 'fixed';
+    this.scene.style.top = '0';
+    this.scene.style.left = '0';
+    this.scene.style.width = '100%';
+    this.scene.style.height = '100%';
+    this.scene.style.zIndex = '1';
     
     // Setup AR event listeners
     this.setupAREventListeners();
     
-    this.showStatus('Initializing AR camera...');
+    this.showStatus('🎥 Starting camera...');
     
-    // Timeout for AR initialization
+    // Shorter timeout for better UX
     setTimeout(() => {
       if (!this.isARReady) {
-        console.warn('AR taking longer than expected');
-        this.showStatus('AR loading... Please wait or refresh if stuck', 3000);
+        this.showStatus('📷 Camera loading... Please wait', 2000);
       }
-    }, 10000);
+    }, 5000);
     
     // Force hide loading after reasonable time
     setTimeout(() => {
       const loading = document.getElementById('loading');
       if (loading) loading.style.display = 'none';
       if (!this.isARReady) {
-        this.showStatus('Point camera at your image to start AR', 5000);
+        this.showStatus('🎯 Point camera at your image', 0);
       }
-    }, 15000);
+    }, 8000);
+  }
+
+  preloadVideo() {
+    // Force video to load and buffer
+    this.video.load();
+    
+    // Set up video for optimal playback
+    this.video.addEventListener('loadstart', () => {
+      console.log('Video loading started');
+    });
+    
+    this.video.addEventListener('canplay', () => {
+      console.log('Video can start playing');
+      this.video.currentTime = 0; // Reset to beginning
+    });
+    
+    this.video.addEventListener('canplaythrough', () => {
+      console.log('Video fully buffered and ready');
+    });
+    
+    // Preload video data
+    if (this.video.readyState < 3) {
+      this.video.preload = 'auto';
+      this.video.load();
+    }
   }
 
   setupAREventListeners() {
@@ -255,9 +291,22 @@ class ARVideoPlayer {
 
   async playVideo() {
     try {
-      // Try to play video
-      await this.video.play();
+      // Ensure video is ready and buffered
+      if (this.video.readyState >= 3) {
+        // Video is fully loaded, play immediately
+        this.video.currentTime = 0;
+        await this.video.play();
+        console.log('Video playing from buffer');
+      } else {
+        // Wait for video to buffer then play
+        this.video.addEventListener('canplaythrough', async () => {
+          this.video.currentTime = 0;
+          await this.video.play();
+          console.log('Video playing after buffering');
+        }, { once: true });
+      }
     } catch (error) {
+      console.error('Video play error:', error);
       // If autoplay fails, show play button
       if (error.name === 'NotAllowedError') {
         this.showStatus('Tap the play button to start video', 4000);
